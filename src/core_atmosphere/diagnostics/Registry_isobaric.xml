@@ -3,11 +3,14 @@
 <!-- ******************************* -->
 
 <dims>
-        <dim name="nIsoLevelsT"         definition="5"
+        <dim name="nIsoLevelsT"         definition="17"
              description="Number of isobaric levels to which temperature will be vertically interpolated"/>
 
-        <dim name="nIsoLevelsZ"         definition="13"
+        <dim name="nIsoLevelsZ"         definition="17"
              description="Number of isobaric levels to which height will be vertically interpolated"/>
+
+        <dim name="nIsoLevelsU"         definition="17"
+             description="Number of isobaric levels to which winds will be vertically interpolated"/>
 </dims>
 
 
@@ -214,6 +217,21 @@
         <var name="z_isobaric"       type="real" dimensions="nIsoLevelsZ nCells Time" units="m"
              description="Height interpolated to isobaric surfaces defined in z_iso_levels"/>
 
+		<var name="uzonal_isobaric"       type="real" dimensions="nIsoLevelsU nCells Time" units="m s^{-1}"
+             description="Zonal wind interpolated to isobaric surfaces defined in u_iso_levels"/>
+
+		<var name="umeridional_isobaric"       type="real" dimensions="nIsoLevelsU nCells Time" units="m s^{-1}"
+             description="Meridional wind interpolated to isobaric surfaces defined in u_iso_levels"/>
+
+		<var name="qv_isobaric"       type="real" dimensions="nIsoLevelsT nCells Time" units="kg kg^{-1}"
+             description="Water vapour mixing ratio interpolated to isobaric surfaces defined in t_iso_levels"/>
+
+		<var name="rh_isobaric"       type="real" dimensions="nIsoLevelsT nCells Time" units="kg kg^{-1}"
+             description="Relative humidity interpolated to isobaric surfaces defined in t_iso_levels"/>
+
+		<var name="omg_isobaric"       type="real" dimensions="nIsoLevelsZ nCells Time" units="Pa s^{-1}"
+             description="Vertical wind interpolated to isobaric surfaces defined in z_iso_levels"/>
+
         <var name="meanT_500_300"    type="real" dimensions="nCells Time" units="K"
              description="Mean temperature in the 300 hPa - 500 hPa layer"/>
 
@@ -222,5 +240,8 @@
 
         <var name="z_iso_levels" type="real" dimensions="nIsoLevelsZ" units="Pa"
              description="Levels for vertical interpolation of height to isobaric surfaces"/>
+
+        <var name="u_iso_levels" type="real" dimensions="nIsoLevelsU" units="Pa"
+             description="Levels for vertical interpolation of horizontal winds to isobaric surfaces"/>
 
 </var_struct>
