@@ -396,7 +396,7 @@
  allocate(ozmixin(latsiz,levsiz))
 
 
- write(0,*) 'Reading ozone data...'
+ call mpas_log_write('Reading ozone data...')
  read (45,'(a)') label   ! grid latitudes (deg) --------->
  read (45,'(10(1pe12.5))') (lat_ozone(j),j=1,lato3d)
  read (45,'(a)') label   ! layer pressure (mb) ---------->
@@ -461,6 +461,10 @@
 !   enddo
  enddo
  deallocate(ozmixin)
+
+ !formats:
+ 101 format(i3,12(1x,e15.8))
+ 102 format(i6,i6,i6,6(1x,e15.8))
 
  end subroutine init_o3_ape
 
