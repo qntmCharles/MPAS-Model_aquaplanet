@@ -380,6 +380,10 @@ use mpas_stream_manager
 !read the input files that contain the monthly-mean ozone climatology on fixed pressure levels:
  if(config_o3climatology) call init_o3climatology(mesh,atm_input)
 
+! option for using hemispheric symmetric ozone specified by file:
+ if(config_equinox .and. (.not. config_o3climatology)) &
+     call init_o3_ape(mesh,atm_input,diag_physics)
+
 !initialization of global surface properties. set here for now, but may be moved when time
 !manager is implemented:
  call landuse_init_forMPAS(dminfo,julday,mesh,configs,diag_physics,sfc_input)
