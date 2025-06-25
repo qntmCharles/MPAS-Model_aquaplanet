@@ -316,6 +316,7 @@
 
 !local pointers:
  logical,pointer:: config_o3climatology
+ logical,pointer:: config_equinox
  logical,pointer:: config_microp_re
  character(len=StrKIND),pointer:: radt_lw_scheme
  character(len=StrKIND),pointer:: microp_scheme
@@ -337,6 +338,7 @@
 
  call mpas_pool_get_config(configs,'config_microp_re'     ,config_microp_re    )
  call mpas_pool_get_config(configs,'config_o3climatology' ,config_o3climatology)
+ call mpas_pool_get_config(configs,'config_equinox'       ,config_equinox      )
  call mpas_pool_get_config(configs,'config_radt_lw_scheme',radt_lw_scheme      )
  call mpas_pool_get_config(configs,'config_microp_scheme' ,microp_scheme       )
 
@@ -467,7 +469,7 @@
        enddo
        enddo
 
-       if(config_o3climatology) then
+       if(config_o3climatology .or. config_equinox) then
           !ozone mixing ratio:
           do k = 1, num_oznLevels
              pin_p(k) = pin(k)
@@ -822,6 +824,7 @@
 
 !local pointers:
  logical,pointer:: config_o3climatology
+ logical,pointer:: config_equinox
  character(len=StrKIND),pointer:: radt_lw_scheme
  character(len=StrKIND),pointer:: radt_cld_overlap,radt_cld_dcorrlen
 
@@ -834,6 +837,7 @@
 !call mpas_log_write(' --- enter subroutine driver_radiation_lw: ')
 
  call mpas_pool_get_config(configs,'config_o3climatology'    ,config_o3climatology)
+ call mpas_pool_get_config(configs,'config_equinox'          ,config_equinox      )
  call mpas_pool_get_config(configs,'config_radt_lw_scheme'   ,radt_lw_scheme      )
  call mpas_pool_get_config(configs,'config_radt_cld_overlap' ,radt_cld_overlap    )
  call mpas_pool_get_config(configs,'config_radt_cld_dcorrlen',radt_cld_dcorrlen   )
@@ -845,7 +849,7 @@
  radiation_lw_select: select case (trim(radt_lw_scheme))
     case ("rrtmg_lw")
        o3input = 0
-       if(config_o3climatology) o3input = 2
+       if(config_o3climatology .or. config_equinox) o3input = 2
 
        !initialization of cloud overlap option:
        if(trim(radt_cld_overlap) == "none"              ) cldovrlp = 0
@@ -892,7 +896,12 @@
 ! are global variables in mpas_atmphys_vars.F and race conditions may occur otherwise!
 !$OMP SINGLE
        !... calculates solar declination:
-       call radconst(declin,solcon,curr_julday,degrad,dpd)
+       if (config_equinox) then
+           solcon = solcon_0
+           declin = 0.
+       else
+           call radconst(declin,solcon,curr_julday,degrad,dpd)
+       end if
 !$OMP END SINGLE
 
 !... convert the radiation time_step to minutes:

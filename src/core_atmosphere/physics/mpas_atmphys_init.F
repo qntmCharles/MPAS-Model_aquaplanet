@@ -108,6 +108,7 @@ use mpas_stream_manager
 !local pointers:
  logical,pointer:: config_do_restart,    &
                    config_o3climatology, &
+                   config_equinox, &
                    config_oml1d
 
  character(len=StrKIND),pointer::            &
@@ -163,6 +164,7 @@ use mpas_stream_manager
 
  call mpas_pool_get_config(configs,'config_do_restart'       ,config_do_restart       )
  call mpas_pool_get_config(configs,'config_o3climatology'    ,config_o3climatology    )
+ call mpas_pool_get_config(configs,'config_equinox'          ,config_equinox          )
  call mpas_pool_get_config(configs,'config_convection_scheme',config_convection_scheme)
  call mpas_pool_get_config(configs,'config_lsm_scheme'       ,config_lsm_scheme       )
  call mpas_pool_get_config(configs,'config_microp_scheme'    ,config_microp_scheme    )
