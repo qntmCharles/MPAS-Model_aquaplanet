@@ -874,13 +874,13 @@
      call radconst(declin,solcon,curr_julday,degrad,dpd)
  end if
 !call mpas_log_write('     ITIMESTEP   = $i', intArgs=(/itimestep/))
-!call mpas_log_write('     YEAR        = $i', intArgs=(/year/))
-!call mpas_log_write('     JULDAY      = $i', intArgs=(/julday/))
-!call mpas_log_write('     GMT         = $r', realArgs=(/gmt/))
+call mpas_log_write('     YEAR        = $i', intArgs=(/year/))
+call mpas_log_write('     JULDAY      = $i', intArgs=(/julday/))
+call mpas_log_write('     GMT         = $r', realArgs=(/gmt/))
 !call mpas_log_write('     XTIME_M     = $r', realArgs=(/xtime_m/))
 !call mpas_log_write('     CURR_JULDAY = $r', realArgs=(/curr_julday/))
-!call mpas_log_write('     SOLCON      = $r', realArgs=(/solcon/))
-!call mpas_log_write('     DECLIN      = $r', realArgs=(/declin/))
+call mpas_log_write('     SOLCON      = $r', realArgs=(/solcon/))
+call mpas_log_write('     DECLIN      = $r', realArgs=(/declin/))
 !$OMP END SINGLE
 
 !... convert the radiation time_step to minutes:
@@ -891,6 +891,7 @@
     case ("rrtmg_sw")
        o3input = 0
        if(config_o3climatology .or. config_equinox) o3input = 2
+       call mpas_log_write('     O3INPUT      = $i', intArgs=(/o3input/))
 
        !initialization of cloud overlap option:
        if(trim(radt_cld_overlap) == "none"              ) cldovrlp = 0
