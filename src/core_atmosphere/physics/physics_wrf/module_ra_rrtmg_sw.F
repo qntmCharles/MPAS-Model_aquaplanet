@@ -9328,11 +9328,14 @@
 !           input aerosol optical depth at 0.55 microns for each aerosol type (ecaer)
 ! iaer = 10, input total aerosol optical depth, single scattering albedo 
 !            and asymmetry parameter (tauaer, ssaaer, asmaer) directly
-      if ( aer_opt.eq.0 .or. aer_opt.eq.2 .or. aer_opt.eq.3) then
-      iaer = 10
-      else if ( aer_opt .eq. 1 ) then
-      iaer = 6
-      endif
+      !-------------- Commented out for no aerosols -------------!
+      !if ( aer_opt.eq.0 .or. aer_opt.eq.2 .or. aer_opt.eq.3) then
+      !iaer = 10
+      !else if ( aer_opt .eq. 1 ) then
+      !iaer = 6
+      !endif
+      !-------------- Commented out for no aerosols -------------!
+      iaer = 0 ! no aerosols
 
 ! Call model and data initialization, compute lookup tables, perform
 ! reduction of g-points from 224 to 112 for input absorption
