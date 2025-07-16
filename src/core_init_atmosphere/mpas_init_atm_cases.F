@@ -366,7 +366,7 @@ module init_atm_cases
          ! output streams with ringing alarms.
          !
          call mpas_stream_mgr_reset_alarms(stream_manager, streamID='lbc', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
-      else if (config_init_case == 9 ) then
+      else if (config_init_case == 10 ) then
         
           call mpas_log_write(' Aquaplanet test case ')
 
