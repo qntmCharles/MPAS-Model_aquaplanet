@@ -5258,12 +5258,13 @@ module atm_time_integration
             h_mom_eddy_visc4   = config_visc4_2dsmag * config_len_disp**3
             h_theta_eddy_visc4 = h_mom_eddy_visc4
 
+            ! removed 16/7/25 by CWP: this is now a configurable option
             ! additional absorbing layer 2nd-order mixing (extra damping near the model top)
-            do iCell = cellStart, cellEnd
-                do k = nVertLevels - 5, nVertLevels
-                    kdiff(k,iCell) = 2.0*config_len_disp*real(k-(nVertLevels-6))/6.
-                end do
-            end do
+            !do iCell = cellStart, cellEnd
+                !do k = nVertLevels - 5, nVertLevels
+                    !kdiff(k,iCell) = 2.0*config_len_disp*real(k-(nVertLevels-6))/6.
+                !end do
+            !end do
             ! end of additional absorbing layer 2nd-order mixing
 
 
