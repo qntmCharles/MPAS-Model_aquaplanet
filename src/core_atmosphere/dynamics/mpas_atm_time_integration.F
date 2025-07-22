@@ -5680,16 +5680,21 @@ module atm_time_integration
 !$OMP BARRIER
 
 !  nudging on velocity
-      if (config_nudge_u) then
+      if (.true.) then ! change this to config_nudge_u in future
 
           ! calculate vertical modulation function (this could be sped up by earlier finding the k index 
           ! corresponding to zntop and znbtm)
+          
+          !zntop = 18km
+          !znbtm = 16km
+          !znrlx = 500m
+          !timescale = 12 hrs
 
           !$acc parallel default(present)
           !$acc loop gang vector
           do k = 1,nVertLevels
              nudge_damp_coeff(k) = 0.5 * ( tanh((zu(k) - 16000.)/500.) - tanh((zu(k) - 18000.)/500.) ) &
-                                            / (nudge_timescale_days*seconds_per_day)
+                                            / (0.5*seconds_per_day)
           end do
           !$acc end parallel
 
