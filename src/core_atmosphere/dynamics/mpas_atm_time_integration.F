@@ -4791,6 +4791,7 @@ module atm_time_integration
       real (kind=RKIND), dimension(:,:,:), pointer :: scalars
 
       real (kind=RKIND), dimension(:,:), pointer :: tend_u_euler, tend_w_euler, tend_theta_euler
+      real (kind=RKIND), dimension(:,:), pointer :: tend_u_nudge
 
       real (kind=RKIND), dimension(:,:,:), pointer :: deriv_two
       integer, dimension(:,:), pointer :: cellsOnEdge, verticesOnEdge, edgesOnCell, edgesOnEdge, cellsOnCell, edgesOnVertex
@@ -4924,6 +4925,7 @@ module atm_time_integration
       call mpas_pool_get_array(tend, 'rho_zz', tend_rho)
       call mpas_pool_get_array(tend, 'rt_diabatic_tend', rt_diabatic_tend)
       call mpas_pool_get_array(tend, 'u_euler', tend_u_euler)
+      call mpas_pool_get_array(tend, 'u_nudge', tend_u_nudge)
       call mpas_pool_get_array(tend, 'theta_euler', tend_theta_euler)
       call mpas_pool_get_array(tend, 'w_euler', tend_w_euler)
       call mpas_pool_get_array(tend, 'w_pgf', tend_w_pgf)
@@ -4962,7 +4964,7 @@ module atm_time_integration
          divergence, vorticity, ke, pv_edge, theta_m, rw, tend_rho, &
          rt_diabatic_tend, tend_theta, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zxu, cqu, & 
          h_divergence, kdiff, edgesOnCell_sign, edgesOnVertex_sign, rw_save, ru_save, &
-         theta_m_save, exner, rr_save, scalars, tend_u_euler, tend_w_euler, tend_theta_euler, deriv_two, &
+         theta_m_save, exner, rr_save, scalars, tend_u_euler, tend_u_nudge, tend_w_euler, tend_theta_euler, deriv_two, &
          cellsOnEdge, verticesOnEdge, edgesOnCell, edgesOnEdge, cellsOnCell, edgesOnVertex, nEdgesOnCell, nEdgesOnEdge, &
          latCell, latEdge, angleEdge, u_init, v_init, advCellsForEdge, nAdvCellsForEdge, adv_coefs, adv_coefs_3rd, &
          rdzu, rdzw, fzm, fzp, qv_init, t_init, cf1, cf2, cf3, r_earth, ur_cell, vr_cell, defc_a, defc_b, &
@@ -4986,7 +4988,7 @@ module atm_time_integration
       divergence, vorticity, ke, pv_edge, theta_m, rw, tend_rho, &
       rt_diabatic_tend, tend_theta, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zxu, cqu, & 
       h_divergence, kdiff, edgesOnCell_sign, edgesOnVertex_sign, rw_save, ru_save, &
-      theta_m_save, exner, rr_save, scalars, tend_u_euler, tend_w_euler, tend_theta_euler, deriv_two, &
+      theta_m_save, exner, rr_save, scalars, tend_u_euler, tend_u_nudge, tend_w_euler, tend_theta_euler, deriv_two, &
       cellsOnEdge, verticesOnEdge, edgesOnCell, edgesOnEdge, cellsOnCell, edgesOnVertex, nEdgesOnCell, nEdgesOnEdge, &
       latCell, latEdge, angleEdge, u_init, v_init, advCellsForEdge, nAdvCellsForEdge, adv_coefs, adv_coefs_3rd, &
       rdzu, rdzw, fzm, fzp, qv_init, t_init, cf1, cf2, cf3, r_earth, ur_cell, vr_cell, defc_a, defc_b, &
@@ -5061,6 +5063,7 @@ module atm_time_integration
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: rr_save
       real (kind=RKIND), dimension(num_scalars,nVertLevels,nCells+1) :: scalars
       real (kind=RKIND), dimension(nVertLevels,nEdges+1) :: tend_u_euler
+      real (kind=RKIND), dimension(nVertLevels,nEdges+1) :: tend_u_nudge
       real (kind=RKIND), dimension(nVertLevels+1,nCells+1) :: tend_w_euler
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: tend_theta_euler
       real (kind=RKIND), dimension(15,2,nEdges+1) :: deriv_two
@@ -5131,6 +5134,7 @@ module atm_time_integration
       ! Local variables
       !
       integer :: iEdge, iCell, iVertex, k, cell1, cell2, vertex1, vertex2, eoe, i, j, iq, iAdvCell
+      real (kind=RKIND) :: lat1, lat2
 
       !real (kind=RKIND), parameter :: c_s = 0.125
       real (kind=RKIND), dimension( nVertLevels+1 ) :: d_diag, d_off_diag, flux_arr
@@ -5149,6 +5153,7 @@ module atm_time_integration
       real (kind=RKIND) :: kdiffu, z1, z2, z3, z4, zm, z0, zp, rayleigh_coef_inverse, visc2cam
 
       real (kind=RKIND), dimension( nVertLevels ) :: rayleigh_damp_coef
+      real (kind=RKIND), dimension( nVertLevels ) :: nudge_damp_coef
 
       real (kind=RKIND) :: flux3, flux4
       real (kind=RKIND) :: q_im2, q_im1, q_i, q_ip1, ua, coef3
@@ -5165,6 +5170,7 @@ module atm_time_integration
       if (rk_step == 1) then
          !$acc enter data create(tend_w_euler)
          !$acc enter data create(tend_u_euler)
+         !$acc enter data create(tend_u_nudge)
          !$acc enter data create(tend_theta_euler)
          !$acc enter data create(tend_rho)
 
@@ -5177,6 +5183,7 @@ module atm_time_integration
       else
          !$acc enter data copyin(tend_w_euler)
          !$acc enter data copyin(tend_u_euler)
+         !$acc enter data copyin(tend_u_nudge)
          !$acc enter data copyin(tend_theta_euler)
          !$acc enter data copyin(tend_rho)
       end if
@@ -5185,6 +5192,7 @@ module atm_time_integration
       !$acc enter data create(h_divergence)
       !$acc enter data copyin(ru, rw)
       !$acc enter data create(rayleigh_damp_coef)
+      !$acc enter data create(nudge_damp_coef)
       !$acc enter data copyin(tend_ru_physics)
       !$acc enter data create(tend_w)
       !$acc enter data copyin(rho_zz)
@@ -5671,7 +5679,45 @@ module atm_time_integration
 
 !$OMP BARRIER
 
+!  nudging on velocity
+      if (config_nudge_u) then
+
+          ! calculate vertical modulation function (this could be sped up by earlier finding the k index 
+          ! corresponding to zntop and znbtm)
+
+          !$acc parallel default(present)
+          !$acc loop gang vector
+          do k = 1,nVertLevels
+             nudge_damp_coeff(k) = 0.5 * ( tanh((zu(k) - 16000.)/500.) - tanh((zu(k) - 18000.)/500.) ) &
+                                            / (nudge_timescale_days*seconds_per_day)
+          end do
+          !$acc end parallel
+
+          ! iterate over edges and nudge
+          ! L_phi = 15.0, U = 10.0
+
+          !$acc parallel default(present)
+          !$acc loop gang worker
+          do iEdge = edgeSolveStart, edgeSolveEnd
+             vertex1 = verticesOnEdge(1, iEdge)
+             vertex2 = verticesOnEdge(2, iEdge)
+             lat1 = latVertex(vertex1)
+             lat2 = latVertex(vertex2)
+!DIR$ IVDEP
+             !$acc loop vector
+             do k = 1, nVertLevels
+                tend_u_nudge(k, iEdge) = rho_edge(k, iEdge) * nudge_damp_coeff(k) &
+                    * ( cos(angleEdge(iEdge)) * 15.0 * 10.0 * 0.5* sqrt(pie) &
+                    * ( erf(lat2 / 15.0) - erf(lat1 / 15.0) ) * sphere_radius / dvEdge(iEdge) - u(k, iEdge) )
+             end do
+          end do
+          !$acc end parallel
+
+      end if
+
+
 !  add in mixing and physics tendency for u
+
 
 !  Rayleigh damping on u
       if (config_rayleigh_damp_u) then
@@ -5706,7 +5752,8 @@ module atm_time_integration
          !$acc loop vector
          do k=1,nVertLevels
 !            tend_u(k,iEdge) = tend_u(k,iEdge) + tend_u_euler(k,iEdge)
-            tend_u(k,iEdge) = tend_u(k,iEdge) + tend_u_euler(k,iEdge) + tend_ru_physics(k,iEdge)
+            tend_u(k,iEdge) = tend_u(k,iEdge) + tend_u_euler(k,iEdge) + tend_ru_physics(k,iEdge) &
+                                + tend_u_nudge(k,iEdge)
          end do
       end do
       !$acc end parallel
@@ -6211,6 +6258,7 @@ module atm_time_integration
       if (rk_step == 1) then
          !$acc exit data copyout(tend_w_euler)
          !$acc exit data copyout(tend_u_euler)
+         !$acc exit data copyout(tend_u_nudge)
          !$acc exit data copyout(tend_theta_euler)
          !$acc exit data copyout(tend_rho)
 
@@ -6223,6 +6271,7 @@ module atm_time_integration
       else
          !$acc exit data delete(tend_w_euler)
          !$acc exit data delete(tend_u_euler)
+         !$acc exit data delete(tend_u_nudge)
          !$acc exit data delete(tend_theta_euler)
          !$acc exit data delete(tend_rho)
       end if
@@ -6231,6 +6280,7 @@ module atm_time_integration
       !$acc exit data copyout(h_divergence)
       !$acc exit data delete(ru, rw)
       !$acc exit data delete(rayleigh_damp_coef)
+      !$acc exit data delete(nudge_damp_coef)
       !$acc exit data delete(tend_ru_physics)
       !$acc exit data copyout(tend_w)
       !$acc exit data delete(rho_zz)
