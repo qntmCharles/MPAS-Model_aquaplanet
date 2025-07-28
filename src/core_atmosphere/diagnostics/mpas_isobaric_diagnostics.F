@@ -13,6 +13,7 @@ module mpas_isobaric_diagnostics
     use mpas_pool_routines
     use mpas_constants
     use mpas_log, only : mpas_log_write
+    use mpas_io_units, only: mpas_new_unit, mpas_release_unit
 
     type (MPAS_pool_type), pointer :: mesh
     type (MPAS_pool_type), pointer :: state
@@ -339,6 +340,8 @@ module mpas_isobaric_diagnostics
         type (mpas_pool_type), intent(inout) :: diag
        
        !local variables:
+        integer :: iso_unit, istat
+        integer, parameter :: open_ok = 0
         integer :: iCell,iVert,iVertD,k,kk
         integer, pointer :: nCells, nCellsSolve, nVertLevels, nVertices, vertexDegree
         integer, pointer :: nIsoLevelsT, nIsoLevelsZ, nIsoLevelsU
@@ -589,23 +592,42 @@ module mpas_isobaric_diagnostics
         if(.not.allocated(dewpoint) ) allocate(dewpoint(nVertLevels,nCells)   )
        
         if (need_t_isobaric) then
-            t_iso_levels(1) = 1000.0
-            t_iso_levels(2) = 2000.0
-            t_iso_levels(3) = 3000.0
-            t_iso_levels(4) = 5000.0
-            t_iso_levels(5) = 7000.0
-            t_iso_levels(6) = 10000.0
-            t_iso_levels(7) = 15000.0
-            t_iso_levels(8) = 20000.0
-            t_iso_levels(9) = 25000.0
-            t_iso_levels(10) = 30000.0
-            t_iso_levels(11) = 40000.0
-            t_iso_levels(12) = 50000.0
-            t_iso_levels(13) = 60000.0
-            t_iso_levels(14) = 70000.0
-            t_iso_levels(15) = 85000.0
-            t_iso_levels(16) = 92500.0
-            t_iso_levels(17) = 100000.0
+            ! read in isobaric levels
+            call mpas_new_unit(iso_unit)
+            open(iso_unit, file='iso_levels.dat', action='READ', status='OLD', iostat=istat)
+            if(istat /= open_ok) then ! no file found, default to manually setting levels
+                t_iso_levels(1) = 1000.0
+                t_iso_levels(2) = 2000.0
+                t_iso_levels(3) = 3000.0
+                t_iso_levels(4) = 5000.0
+                t_iso_levels(5) = 7000.0
+                t_iso_levels(6) = 10000.0
+                t_iso_levels(7) = 15000.0
+                t_iso_levels(8) = 20000.0
+                t_iso_levels(9) = 25000.0
+                t_iso_levels(10) = 30000.0
+                t_iso_levels(11) = 40000.0
+                t_iso_levels(12) = 50000.0
+                t_iso_levels(13) = 60000.0
+                t_iso_levels(14) = 70000.0
+                t_iso_levels(15) = 85000.0
+                t_iso_levels(16) = 92500.0
+                t_iso_levels(17) = 100000.0
+
+                if (nIsoLevelsT > 17) then
+                    do k = 18, nIsoLevelsT
+                        t_iso_levels(k) = 100000.0
+                    end do
+                end if
+
+            end if
+
+            do k = 1, nIsoLevelsT
+                read(iso_unit, *) t_iso_levels(k)
+            end do
+
+            close(iso_unit)
+            call mpas_release_unit(iso_unit)
         end if
        
         if (need_z_isobaric) then

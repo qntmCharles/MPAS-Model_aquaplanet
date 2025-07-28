@@ -4796,7 +4796,7 @@ module atm_time_integration
       real (kind=RKIND), dimension(:,:,:), pointer :: deriv_two
       integer, dimension(:,:), pointer :: cellsOnEdge, verticesOnEdge, edgesOnCell, edgesOnEdge, cellsOnCell, edgesOnVertex
       integer, dimension(:), pointer :: nEdgesOnCell, nEdgesOnEdge
-      real (kind=RKIND), dimension(:), pointer :: latCell, latEdge, angleEdge, u_init, v_init
+      real (kind=RKIND), dimension(:), pointer :: latCell, latEdge, latVertex, angleEdge, u_init, v_init
 
       integer, dimension(:,:), pointer :: advCellsForEdge
       integer, dimension(:), pointer :: nAdvCellsForEdge
@@ -4903,6 +4903,7 @@ module atm_time_integration
       call mpas_pool_get_array(mesh, 'zxu', zxu)
       call mpas_pool_get_array(mesh, 'latCell', latCell)
       call mpas_pool_get_array(mesh, 'latEdge', latEdge)
+      call mpas_pool_get_array(mesh, 'latVertex', latVertex)
       call mpas_pool_get_array(mesh, 'angleEdge', angleEdge)
       call mpas_pool_get_array(mesh, 'defc_a', defc_a)
       call mpas_pool_get_array(mesh, 'defc_b', defc_b)
@@ -4966,7 +4967,7 @@ module atm_time_integration
          h_divergence, kdiff, edgesOnCell_sign, edgesOnVertex_sign, rw_save, ru_save, &
          theta_m_save, exner, rr_save, scalars, tend_u_euler, tend_u_nudge, tend_w_euler, tend_theta_euler, deriv_two, &
          cellsOnEdge, verticesOnEdge, edgesOnCell, edgesOnEdge, cellsOnCell, edgesOnVertex, nEdgesOnCell, nEdgesOnEdge, &
-         latCell, latEdge, angleEdge, u_init, v_init, advCellsForEdge, nAdvCellsForEdge, adv_coefs, adv_coefs_3rd, &
+         latCell, latEdge, latVertex, angleEdge, u_init, v_init, advCellsForEdge, nAdvCellsForEdge, adv_coefs, adv_coefs_3rd, &
          rdzu, rdzw, fzm, fzp, qv_init, t_init, cf1, cf2, cf3, r_earth, ur_cell, vr_cell, defc_a, defc_b, &
          tend_w_pgf, tend_w_buoy, coef_3rd_order, c_s, config_mix_full, config_horiz_mixing, config_del4u_div_factor, &
          config_h_mom_eddy_visc2, config_v_mom_eddy_visc2, config_h_theta_eddy_visc2, config_v_theta_eddy_visc2, &
@@ -4990,7 +4991,7 @@ module atm_time_integration
       h_divergence, kdiff, edgesOnCell_sign, edgesOnVertex_sign, rw_save, ru_save, &
       theta_m_save, exner, rr_save, scalars, tend_u_euler, tend_u_nudge, tend_w_euler, tend_theta_euler, deriv_two, &
       cellsOnEdge, verticesOnEdge, edgesOnCell, edgesOnEdge, cellsOnCell, edgesOnVertex, nEdgesOnCell, nEdgesOnEdge, &
-      latCell, latEdge, angleEdge, u_init, v_init, advCellsForEdge, nAdvCellsForEdge, adv_coefs, adv_coefs_3rd, &
+      latCell, latEdge, latVertex, angleEdge, u_init, v_init, advCellsForEdge, nAdvCellsForEdge, adv_coefs, adv_coefs_3rd, &
       rdzu, rdzw, fzm, fzp, qv_init, t_init, cf1, cf2, cf3, r_earth, ur_cell, vr_cell, defc_a, defc_b, &
       tend_w_pgf, tend_w_buoy, coef_3rd_order, c_s, config_mix_full, config_horiz_mixing, config_del4u_div_factor, &
       config_h_mom_eddy_visc2, config_v_mom_eddy_visc2, config_h_theta_eddy_visc2, config_v_theta_eddy_visc2, &
@@ -5077,6 +5078,7 @@ module atm_time_integration
       integer, dimension(nEdges+1) :: nEdgesOnEdge
       real (kind=RKIND), dimension(nCells+1) :: latCell
       real (kind=RKIND), dimension(nEdges+1) :: latEdge
+      real (kind=RKIND), dimension(nVertices+1) :: latVertex
       real (kind=RKIND), dimension(nEdges+1) :: angleEdge
       real (kind=RKIND), dimension(nVertLevels) :: u_init, v_init
 
@@ -5150,6 +5152,8 @@ module atm_time_integration
       real (kind=RKIND) :: h_theta_eddy_visc4, v_theta_eddy_visc2
       real (kind=RKIND) :: u_diffusion
 
+      real (kind=RKIND) :: pie
+
       real (kind=RKIND) :: kdiffu, z1, z2, z3, z4, zm, z0, zp, rayleigh_coef_inverse, visc2cam
 
       real (kind=RKIND), dimension( nVertLevels ) :: rayleigh_damp_coef
@@ -5212,6 +5216,8 @@ module atm_time_integration
       prandtl_inv = 1.0_RKIND / prandtl
       invDt = 1.0_RKIND / dt
       inv_r_earth = 1.0_RKIND / r_earth
+
+      pie = 4.*atan(1.)
 
       v_mom_eddy_visc2   = config_v_mom_eddy_visc2
       v_theta_eddy_visc2 = config_v_theta_eddy_visc2
@@ -5688,13 +5694,15 @@ module atm_time_integration
           !zntop = 18km
           !znbtm = 16km
           !znrlx = 500m
-          !timescale = 12 hrs
+          !timescale = 0.5 days
 
           !$acc parallel default(present)
           !$acc loop gang vector
           do k = 1,nVertLevels
-             nudge_damp_coeff(k) = 0.5 * ( tanh((zu(k) - 16000.)/500.) - tanh((zu(k) - 18000.)/500.) ) &
+             nudge_damp_coef(k) = 0.5 * ( tanh((zgrid(k,1) - 16000.)/500.) - tanh((zgrid(k,1) - 18000.)/500.) ) &
                                             / (0.5*seconds_per_day)
+                            ! exploiting the fact that surface is uniform, so zgrid is uniform.
+                            ! if terrain is introduced, this needs changing
           end do
           !$acc end parallel
 
@@ -5711,9 +5719,9 @@ module atm_time_integration
 !DIR$ IVDEP
              !$acc loop vector
              do k = 1, nVertLevels
-                tend_u_nudge(k, iEdge) = rho_edge(k, iEdge) * nudge_damp_coeff(k) &
+                tend_u_nudge(k, iEdge) = rho_edge(k, iEdge) * nudge_damp_coef(k) &
                     * ( cos(angleEdge(iEdge)) * 15.0 * 10.0 * 0.5* sqrt(pie) &
-                    * ( erf(lat2 / 15.0) - erf(lat1 / 15.0) ) * sphere_radius / dvEdge(iEdge) - u(k, iEdge) )
+                    * ( erf(lat2 / 15.0) - erf(lat1 / 15.0) ) * r_earth / dvEdge(iEdge) - u(k, iEdge) )
              end do
           end do
           !$acc end parallel

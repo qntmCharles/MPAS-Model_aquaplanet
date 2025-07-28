@@ -1960,6 +1960,9 @@
                 <var name="euler_tend_u" name_in_code="u_euler" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-2}"
                      description="Tendency of u from dynamics"/>
 
+                <var name="nudge_tend_u" name_in_code="u_nudge" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-2}"
+                     description="Tendency of u from nudging"/>
+
                 <var name="euler_tend_w" name_in_code="w_euler" type="real" dimensions="nVertLevelsP1 nCells Time" units="m s^{-2}"
                      description="Tendency of w from dynamics"/>
 
