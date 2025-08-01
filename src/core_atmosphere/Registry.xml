@@ -294,6 +294,48 @@
                      possible_values="Positive integer values"/>
         </nml_record>
 
+		<nml_record name="nudging" in_defaults="true">
+                <nml_option name="config_nudge_u" type="logical" default_value="false" in_defaults="false"
+                     units="-"
+                     description="Whether to apply nudging on zonal velocity"
+                     possible_values=".true. or .false."/>
+
+                <nml_option name="config_nudge_u_timescale" type="real" default_value="1" in_defaults="false"
+                     units="days"
+                     description="Timescale, in days (86400 s), for nudging of zonal velocity"
+                     possible_values=".true. or .false."/>
+
+                <nml_option name="config_nudge_u_scale_z" type="real" default_value="500.0" in_defaults="false"
+                     units="m"
+                     description="Vertical scale for nudging kernel on zonal velocity"
+                     possible_values="Positive real values"/>
+
+				<nml_option name="config_nudge_u_centre_z" type="real" default_value="17000.0" in_defaults="false"
+                     units="m"
+                     description="Vertical height for centre of nudging kernel on zonal velocity"
+                     possible_values="Positive real values"/>
+
+				<nml_option name="config_nudge_u_scale_lat" type="real" default_value="0.26" in_defaults="false"
+                     units="rad"
+                     description="Latitudinal scale for nudging kernel on zonal velocity"
+					 possible_values="Positive real values"/>
+
+				<nml_option name="config_nudge_u_type" type="character" default_value="constant" in_defaults="false"
+                     units="-"
+                     description="Type of profile for nudged zonal velocity. If 'shear', config_nudge_u_shearrate specifies the vertical shear rate."
+					 possible_values="'constant' or 'shear'"/>
+
+				<nml_option name="config_nudge_u_shearrate" type="real" default_value="0.01" in_defaults="false"
+					 units="s^{-1}"
+                     description="Vertical shear rate for nudged zonal velocity"
+					 possible_values="Positive real values"/>
+
+				<nml_option name="config_nudge_u_constant" type="real" default_value="10.0" in_defaults="false"
+					 units="m s^{-1}"
+                     description="Constant zonal wind speed for nudged zonal velocity"
+					 possible_values="Real values"/>
+		</nml_record>
+
         <nml_record name="limited_area" in_defaults="true">
                 <nml_option name="config_apply_lbcs" type="logical" default_value="false"
                      units="-"
@@ -917,6 +959,10 @@
 			<var name="ke"/>
 			<var name="uReconstructZonal"/>
 			<var name="uReconstructMeridional"/>
+			<var name="nudge_uRZonal"/>
+			<var name="nudge_uRMeridional"/>
+			<var name="tend_uRZonal"/>
+			<var name="tend_uRMeridional"/>
 
                         <!-- Begin Ertel PV diagnostics defined in diagnostics/Registry_pv.xml -->
 			<var name="ertel_pv"/>
@@ -1216,6 +1262,10 @@
 			<var name="theta_base"/>
 			<var name="uReconstructZonal"/>
 			<var name="uReconstructMeridional"/>
+			<var name="nudge_uRZonal"/>
+			<var name="nudge_uRMeridional"/>
+			<var name="tend_uRZonal"/>
+			<var name="tend_uRMeridional"/>
 			<var name="surface_pressure"/>
 #ifdef DO_PHYSICS
 			<var name="cldfrac"/>
@@ -1823,6 +1873,38 @@
                      description="Meridional component of reconstructed horizontal velocity at cell centers"/>
 
                 <!-- Other diagnostic variables -->
+                <var name="u_nudge" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-1}"
+                     description="Horizontal normal nudged velocity at edges"/>
+
+                <var name="nudge_uRX" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
+                     description="Cartesian x-component of nudging tendency on horizontal velocity at cell centers"/>
+
+                <var name="nudge_uRY" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
+                     description="Cartesian y-component of nudging tendency on horizontal velocity at cell centers"/>
+
+                <var name="nudge_uRZ" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
+                     description="Cartesian z-component of nudging tendency on horizontal velocity at cell centers"/>
+
+                <var name="nudge_uRZonal" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
+                     description="Zonal component of nudging tendency on horizontal velocity at cell centers"/>
+
+                <var name="nudge_uRMeridional" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
+                     description="Meridional component of nudging tendency on horizontal velocity at cell centers"/>
+
+                <var name="tend_uRX" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
+                     description="Cartesian x-component of nudged horizontal velocity at cell centers"/>
+
+                <var name="tend_uRY" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
+                     description="Cartesian y-component of nudged horizontal velocity at cell centers"/>
+
+                <var name="tend_uRZ" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
+                     description="Cartesian z-component of nudged horizontal velocity at cell centers"/>
+
+                <var name="tend_uRZonal" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
+                     description="Zonal component of nudged horizontal velocity at cell centers"/>
+
+                <var name="tend_uRMeridional" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
+                     description="Meridional component of nudged horizontal velocity at cell centers"/>
 
                 <var name="rv" type="real" dimensions="nVertLevels nEdges Time" units="???"
                      description="???"/>

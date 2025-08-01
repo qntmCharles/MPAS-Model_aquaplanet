@@ -1523,6 +1523,7 @@ module mpas_pv_diagnostics
       call mpas_reconstruct(mesh, tend_u_phys,         &
                                tenduX,tenduY,tenduZ,   &
                                tenduZonal,tenduMerid)
+
       !uncouple tend_w_euler
       do iCell=1,nCells
          do k=2,nVertLevels
