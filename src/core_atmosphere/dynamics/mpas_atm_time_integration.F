@@ -4809,6 +4809,7 @@ module atm_time_integration
       !
       ! Local variables
       !
+      integer, pointer :: index_qv
       integer, pointer :: nCells, nEdges, nVertices, nCellsSolve, nEdgesSolve, vertexDegree, maxEdges, maxEdges2
       integer, pointer :: moist_start, moist_end, num_scalars
 
@@ -4820,6 +4821,8 @@ module atm_time_integration
                                                     h_divergence, kdiff, edgesOnCell_sign, edgesOnVertex_sign, rw_save, ru_save
 
       real (kind=RKIND), dimension(:,:), pointer :: theta_m_save
+      real (kind=RKIND), dimension(:,:), pointer :: tend_theta_nudge
+      real (kind=RKIND), dimension(:,:), pointer :: theta_nudge
 
       real (kind=RKIND), dimension(:,:), pointer :: exner
 
@@ -4872,8 +4875,11 @@ module atm_time_integration
 
       logical, pointer :: config_nudge_u
       real (kind=RKIND), pointer :: config_nudge_u_scale_z, config_nudge_u_centre_z, config_nudge_u_scale_lat
-      character (len=StrKIND), pointer :: config_nudge_u_type
-      real (kind=RKIND), pointer :: config_nudge_u_shearrate, config_nudge_u_timescale, config_nudge_u_constant
+      real (kind=RKIND), pointer :: config_nudge_u_timescale, config_nudge_u_constant
+
+      logical, pointer :: config_nudge_T
+      real (kind=RKIND), pointer :: config_nudge_T_scale_z, config_nudge_T_centre_z, config_nudge_T_scale_lat
+      real (kind=RKIND), pointer :: config_nudge_T_timescale, config_nudge_T_constant
 
       call mpas_pool_get_config(mesh, 'sphere_radius', r_earth)
       call mpas_pool_get_config(configs, 'config_coef_3rd_order', coef_3rd_order)
@@ -4899,9 +4905,13 @@ module atm_time_integration
       call mpas_pool_get_config(configs, 'config_nudge_u_scale_z', config_nudge_u_scale_z)
       call mpas_pool_get_config(configs, 'config_nudge_u_centre_z', config_nudge_u_centre_z)
       call mpas_pool_get_config(configs, 'config_nudge_u_scale_lat', config_nudge_u_scale_lat)
-      call mpas_pool_get_config(configs, 'config_nudge_u_type', config_nudge_u_type)
-      call mpas_pool_get_config(configs, 'config_nudge_u_shearrate', config_nudge_u_shearrate)
       call mpas_pool_get_config(configs, 'config_nudge_u_constant', config_nudge_u_constant)
+      call mpas_pool_get_config(configs, 'config_nudge_T', config_nudge_T)
+      call mpas_pool_get_config(configs, 'config_nudge_T_timescale', config_nudge_T_timescale)
+      call mpas_pool_get_config(configs, 'config_nudge_T_scale_z', config_nudge_T_scale_z)
+      call mpas_pool_get_config(configs, 'config_nudge_T_centre_z', config_nudge_T_centre_z)
+      call mpas_pool_get_config(configs, 'config_nudge_T_scale_lat', config_nudge_T_scale_lat)
+      call mpas_pool_get_config(configs, 'config_nudge_T_constant', config_nudge_T_constant)
 
       call mpas_pool_get_array(state, 'rho_zz', rho_zz, 2)
       call mpas_pool_get_array(state, 'u', u, 2)
@@ -4910,6 +4920,7 @@ module atm_time_integration
       call mpas_pool_get_array(state, 'theta_m', theta_m_save, 1)
       call mpas_pool_get_array(state, 'scalars', scalars, 2)
 
+      call mpas_pool_get_array(diag, 'theta_nudge', theta_nudge)
       call mpas_pool_get_array(diag, 'u_nudge', u_nudge)
       call mpas_pool_get_array(diag, 'uReconstructZonal', ur_cell)
       call mpas_pool_get_array(diag, 'uReconstructMeridional', vr_cell)
@@ -4975,6 +4986,7 @@ module atm_time_integration
 
       call mpas_pool_get_array(tend, 'u', tend_u)
       call mpas_pool_get_array(tend, 'theta_m', tend_theta)
+      call mpas_pool_get_array(tend, 'theta_nudge', tend_theta_nudge)
       call mpas_pool_get_array(tend, 'w', tend_w)
       call mpas_pool_get_array(tend, 'rho_zz', tend_rho)
       call mpas_pool_get_array(tend, 'rt_diabatic_tend', rt_diabatic_tend)
@@ -4997,6 +5009,9 @@ module atm_time_integration
       call mpas_pool_get_dimension(mesh, 'maxEdges', maxEdges)
       call mpas_pool_get_dimension(mesh, 'maxEdges2', maxEdges2)
 
+#ifdef DO_PHYSICS
+      call mpas_pool_get_dimension(state, 'index_qv', index_qv)
+#endif
       call mpas_pool_get_dimension(state, 'num_scalars', num_scalars)
       call mpas_pool_get_dimension(state, 'moist_start', moist_start)
       call mpas_pool_get_dimension(state, 'moist_end', moist_end)
@@ -5012,11 +5027,12 @@ module atm_time_integration
       call mpas_pool_get_array(mesh, 'cf3', cf3)
 
       call atm_compute_dyn_tend_work(nCells, nEdges, nVertices, nVertLevels, &
+         index_qv, &
          nCellsSolve, nEdgesSolve, vertexDegree, maxEdges, maxEdges2, num_scalars, moist_start, moist_end, &
          fEdge, dvEdge, dcEdge, invDcEdge, invDvEdge, invAreaCell, invAreaTriangle, meshScalingDel2, meshScalingDel4, &
          weightsOnEdge, zgrid, rho_edge, rho_zz, ru, u, v, tend_u, &
          divergence, vorticity, ke, pv_edge, theta_m, rw, tend_rho, &
-         rt_diabatic_tend, tend_theta, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zxu, cqu, & 
+         rt_diabatic_tend, tend_theta, tend_theta_nudge, theta_nudge, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zxu, cqu, & 
          h_divergence, kdiff, edgesOnCell_sign, edgesOnVertex_sign, rw_save, ru_save, &
          theta_m_save, exner, rr_save, scalars, tend_u_euler, tend_u_nudge, u_nudge, tend_w_euler, tend_theta_euler, deriv_two, &
          cellsOnEdge, verticesOnEdge, edgesOnCell, edgesOnEdge, cellsOnCell, edgesOnVertex, nEdgesOnCell, nEdgesOnEdge, &
@@ -5029,7 +5045,9 @@ module atm_time_integration
          config_rayleigh_damp_u, config_rayleigh_damp_u_timescale_days, & 
          config_number_rayleigh_damp_u_levels, config_number_cam_damping_levels, &
          config_nudge_u, config_nudge_u_scale_z, config_nudge_u_centre_z, config_nudge_u_scale_lat, &
-         config_nudge_u_type, config_nudge_u_shearrate, config_nudge_u_timescale, config_nudge_u_constant, &
+         config_nudge_u_timescale, config_nudge_u_constant, &
+         config_nudge_T, config_nudge_T_scale_z, config_nudge_T_centre_z, config_nudge_T_scale_lat, &
+         config_nudge_T_timescale, config_nudge_T_constant, &
          rthdynten, &
          cellStart, cellEnd, vertexStart, vertexEnd, edgeStart, edgeEnd, &
          cellSolveStart, cellSolveEnd, vertexSolveStart, vertexSolveEnd, edgeSolveStart, edgeSolveEnd)
@@ -5038,11 +5056,12 @@ module atm_time_integration
 
 
    subroutine atm_compute_dyn_tend_work(nCells, nEdges, nVertices, nVertLevels_dummy, &
+      index_qv, &
       nCellsSolve, nEdgesSolve, vertexDegree, maxEdges_dummy, maxEdges2_dummy, num_scalars_dummy, moist_start, moist_end, &
       fEdge, dvEdge, dcEdge, invDcEdge, invDvEdge, invAreaCell, invAreaTriangle, meshScalingDel2, meshScalingDel4, &
       weightsOnEdge, zgrid, rho_edge, rho_zz, ru, u, v, tend_u, &
       divergence, vorticity, ke, pv_edge, theta_m, rw, tend_rho, &
-      rt_diabatic_tend, tend_theta, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zxu, cqu, & 
+      rt_diabatic_tend, tend_theta, tend_theta_nudge, theta_nudge, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zxu, cqu, & 
       h_divergence, kdiff, edgesOnCell_sign, edgesOnVertex_sign, rw_save, ru_save, &
       theta_m_save, exner, rr_save, scalars, tend_u_euler, tend_u_nudge, u_nudge, tend_w_euler, tend_theta_euler, deriv_two, &
       cellsOnEdge, verticesOnEdge, edgesOnCell, edgesOnEdge, cellsOnCell, edgesOnVertex, nEdgesOnCell, nEdgesOnEdge, &
@@ -5055,7 +5074,9 @@ module atm_time_integration
       config_rayleigh_damp_u, config_rayleigh_damp_u_timescale_days, &
       config_number_rayleigh_damp_u_levels, config_number_cam_damping_levels, &
       config_nudge_u, config_nudge_u_scale_z, config_nudge_u_centre_z, config_nudge_u_scale_lat, &
-      config_nudge_u_type, config_nudge_u_shearrate, config_nudge_u_timescale, config_nudge_u_constant, &
+      config_nudge_u_timescale, config_nudge_u_constant, &
+      config_nudge_T, config_nudge_T_scale_z, config_nudge_T_centre_z, config_nudge_T_scale_lat, &
+      config_nudge_T_timescale, config_nudge_T_constant, &
       rthdynten, &
       cellStart, cellEnd, vertexStart, vertexEnd, edgeStart, edgeEnd, &
       cellSolveStart, cellSolveEnd, vertexSolveStart, vertexSolveEnd, edgeSolveStart, edgeSolveEnd)
@@ -5099,6 +5120,7 @@ module atm_time_integration
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: tend_rho
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: rt_diabatic_tend
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: tend_theta
+      real (kind=RKIND), dimension(nVertLevels,nCells+1) :: tend_theta_nudge
       real (kind=RKIND), dimension(nVertLevels+1,nCells+1) :: tend_w
       real (kind=RKIND), dimension(nVertLevels+1,nCells+1) :: w
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: cqw
@@ -5117,6 +5139,7 @@ module atm_time_integration
       real (kind=RKIND), dimension(nVertLevels,nEdges+1) :: ru_save
 
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: theta_m_save
+      real (kind=RKIND), dimension(nVertLevels,nCells+1) :: theta_nudge
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: exner
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: rr_save
       real (kind=RKIND), dimension(num_scalars,nVertLevels,nCells+1) :: scalars
@@ -5140,6 +5163,7 @@ module atm_time_integration
       real (kind=RKIND), dimension(nEdges+1) :: angleEdge
       real (kind=RKIND), dimension(nVertLevels) :: u_init, v_init
 
+      integer :: index_qv
       integer, dimension(15,nEdges+1) :: advCellsForEdge
       integer, dimension(nEdges+1) :: nAdvCellsForEdge
       real (kind=RKIND), dimension(15,nEdges+1) :: adv_coefs
@@ -5186,8 +5210,11 @@ module atm_time_integration
 
       logical, pointer :: config_nudge_u
       real (kind=RKIND), pointer :: config_nudge_u_scale_z, config_nudge_u_centre_z, config_nudge_u_scale_lat
-      character (len=StrKIND), pointer :: config_nudge_u_type
-      real (kind=RKIND), pointer :: config_nudge_u_shearrate, config_nudge_u_timescale, config_nudge_u_constant
+      real (kind=RKIND), pointer :: config_nudge_u_timescale, config_nudge_u_constant
+
+      logical, pointer :: config_nudge_T
+      real (kind=RKIND), pointer :: config_nudge_T_scale_z, config_nudge_T_centre_z, config_nudge_T_scale_lat
+      real (kind=RKIND), pointer :: config_nudge_T_timescale, config_nudge_T_constant
 
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: rthdynten
 
@@ -5220,7 +5247,8 @@ module atm_time_integration
 
       real (kind=RKIND), dimension( nVertLevels ) :: rayleigh_damp_coef
       real (kind=RKIND), dimension( nVertLevels ) :: nudge_vert_coef
-      real (kind=RKIND), dimension( nEdges+1 ) :: nudge_horiz_coef
+      real (kind=RKIND), dimension( nEdges+1 ) :: nudge_edge_coef
+      real (kind=RKIND), dimension( nCells+1 ) :: nudge_cell_coef
 
       real (kind=RKIND) :: flux3, flux4
       real (kind=RKIND) :: q_im2, q_im1, q_i, q_ip1, ua, coef3
@@ -5237,8 +5265,6 @@ module atm_time_integration
       if (rk_step == 1) then
          !$acc enter data create(tend_w_euler)
          !$acc enter data create(tend_u_euler)
-         !$acc enter data create(tend_u_nudge)
-         !$acc enter data create(u_nudge)
          !$acc enter data create(tend_theta_euler)
          !$acc enter data create(tend_rho)
 
@@ -5251,8 +5277,6 @@ module atm_time_integration
       else
          !$acc enter data copyin(tend_w_euler)
          !$acc enter data copyin(tend_u_euler)
-         !$acc enter data copyin(tend_u_nudge)
-         !$acc enter data copyin(u_nudge)
          !$acc enter data copyin(tend_theta_euler)
          !$acc enter data copyin(tend_rho)
       end if
@@ -5262,7 +5286,10 @@ module atm_time_integration
       !$acc enter data copyin(ru, rw)
       !$acc enter data create(rayleigh_damp_coef)
       !$acc enter data create(nudge_vert_coef)
-      !$acc enter data create(nudge_horiz_coef)
+      !$acc enter data create(nudge_edge_coef)
+      !$acc enter data create(nudge_cell_coef)
+      !$acc enter data create(tend_u_nudge)
+      !$acc enter data create(u_nudge)
       !$acc enter data copyin(tend_ru_physics)
       !$acc enter data create(tend_w)
       !$acc enter data copyin(rho_zz)
@@ -5273,6 +5300,8 @@ module atm_time_integration
       !$acc enter data copyin(tend_rtheta_physics)
       !$acc enter data copyin(rw_save, rt_diabatic_tend)
       !$acc enter data create(rthdynten)
+      !$acc enter data create(tend_theta_nudge)
+      !$acc enter data create(theta_nudge)
       !$acc enter data copyin(t_init)
 #ifdef CURVATURE
       !$acc enter data copyin(ur_cell, vr_cell)
@@ -5757,7 +5786,7 @@ module atm_time_integration
           !$acc parallel default(present)
           !$acc loop gang vector
           do iEdge = edgeSolveStart, edgeSolveEnd
-              nudge_horiz_coef(iEdge) = exp( -( latEdge(iEdge) / config_nudge_u_scale_lat )**2.)
+              nudge_edge_coef(iEdge) = exp( -( latEdge(iEdge) / config_nudge_u_scale_lat )**2.)
           end do
           !$acc end parallel
 
@@ -5767,10 +5796,10 @@ module atm_time_integration
 !DIR$ IVDEP
              !$acc loop vector
              do k = 1, nVertLevels
-                u_nudge(k, iEdge) = nudge_vert_coef(k) * nudge_horiz_coef(iEdge) &
+                u_nudge(k, iEdge) = nudge_vert_coef(k) * nudge_edge_coef(iEdge) &
                     * ( cos(angleEdge(iEdge)) * config_nudge_u_constant) &
                     / (config_nudge_u_timescale * seconds_per_day)
-                tend_u_nudge(k, iEdge) = rho_edge(k, iEdge) * nudge_vert_coef(k) * nudge_horiz_coef(iEdge) &
+                tend_u_nudge(k, iEdge) = rho_edge(k, iEdge) * nudge_vert_coef(k) * nudge_edge_coef(iEdge) &
                     * ( cos(angleEdge(iEdge)) * config_nudge_u_constant  - u(k, iEdge) ) &
                     / (config_nudge_u_timescale * seconds_per_day)
              end do
@@ -6306,6 +6335,47 @@ module atm_time_integration
 
       end if ! compute vertical theta mixing on first rk_step
 
+      if (config_nudge_T) then
+          !$acc parallel default(present)
+          !$acc loop gang vector
+          do k = 1, nVertLevels
+              nudge_vert_coef(k) = exp( -( (zgrid(k, 1) - config_nudge_T_centre_z) &
+                                                / config_nudge_T_scale_z )**2.)
+                            ! exploiting the fact that surface is uniform, so zgrid is uniform.
+                            ! if terrain is introduced, this needs changing
+          end do
+          !$acc end parallel
+
+          !$acc parallel default(present)
+          !$acc loop gang vector
+          do iCell = cellSolveStart, cellSolveEnd
+              nudge_cell_coef(iEdge) = exp( -( latCell(iCell) / config_nudge_T_scale_lat )**2.)
+          end do
+          !$acc end parallel
+
+          !$acc parallel default(present)
+          !$acc loop gang worker
+          do iCell = cellSolveStart, cellSolveEnd
+!DIR$ IVDEP
+             !$acc loop vector
+             do k = 1, nVertLevels
+                ! convert temperature to theta_m
+                ! theta_m = (temp / exner) * (1 + q_v) 
+
+                theta_nudge(k, iCell) = nudge_vert_coef(k) * nudge_cell_coef(iCell) & 
+                    * ((config_nudge_T_constant / exner(k, iCell)) * &
+                    (1._RKIND + rvord * scalars(index_qv, k, iCell))) &
+                    / (config_nudge_T_timescale * seconds_per_day)
+                tend_theta_nudge(k, iCell) = rho_zz(k, iCell) * nudge_vert_coef(k) * nudge_cell_coef(iCell) &
+                    * ( ((config_nudge_T_constant / exner(k, iCell)) * &
+                        (1._RKIND + rvord * scalars(index_qv, k, iCell))) - theta_m(k, iCell)) &
+                    / (config_nudge_T_timescale * seconds_per_day)
+             end do
+          end do
+          !$acc end parallel
+
+      end if
+
       !$acc parallel default(present)
       !$acc loop gang worker
       do iCell = cellSolveStart,cellSolveEnd
@@ -6313,7 +6383,8 @@ module atm_time_integration
          !$acc loop vector
          do k=1,nVertLevels
 !            tend_theta(k,iCell) = tend_theta(k,iCell) + tend_theta_euler(k,iCell)
-            tend_theta(k,iCell) = tend_theta(k,iCell) + tend_theta_euler(k,iCell) + tend_rtheta_physics(k,iCell)
+            tend_theta(k,iCell) = tend_theta(k,iCell) + tend_theta_euler(k,iCell) &
+                                + tend_rtheta_physics(k,iCell) + tend_theta_nudge(k, iCell)
          end do
       end do
       !$acc end parallel
@@ -6322,8 +6393,6 @@ module atm_time_integration
       if (rk_step == 1) then
          !$acc exit data copyout(tend_w_euler)
          !$acc exit data copyout(tend_u_euler)
-         !$acc exit data copyout(tend_u_nudge)
-         !$acc exit data copyout(u_nudge)
          !$acc exit data copyout(tend_theta_euler)
          !$acc exit data copyout(tend_rho)
 
@@ -6336,18 +6405,21 @@ module atm_time_integration
       else
          !$acc exit data delete(tend_w_euler)
          !$acc exit data delete(tend_u_euler)
-         !$acc exit data delete(tend_u_nudge)
-         !$acc exit data delete(u_nudge)
          !$acc exit data delete(tend_theta_euler)
          !$acc exit data delete(tend_rho)
       end if
+      !$acc exit data delete(tend_u_nudge)
+      !$acc exit data delete(u_nudge)
+      !$acc exit data delete(tend_theta_nudge)
+      !$acc exit data delete(theta_nudge)
       !$acc exit data copyout(tend_u)
       !$acc exit data delete(cqu, pp, u, w, pv_edge, rho_edge, ke)
       !$acc exit data copyout(h_divergence)
       !$acc exit data delete(ru, rw)
       !$acc exit data delete(rayleigh_damp_coef)
       !$acc exit data delete(nudge_vert_coef)
-      !$acc exit data delete(nudge_horiz_coef)
+      !$acc exit data delete(nudge_edge_coef)
+      !$acc exit data delete(nudge_cell_coef)
       !$acc exit data delete(tend_ru_physics)
       !$acc exit data copyout(tend_w)
       !$acc exit data delete(rho_zz)

@@ -320,19 +320,39 @@
                      description="Latitudinal scale for nudging kernel on zonal velocity"
 					 possible_values="Positive real values"/>
 
-				<nml_option name="config_nudge_u_type" type="character" default_value="constant" in_defaults="false"
-                     units="-"
-                     description="Type of profile for nudged zonal velocity. If 'shear', config_nudge_u_shearrate specifies the vertical shear rate."
-					 possible_values="'constant' or 'shear'"/>
-
-				<nml_option name="config_nudge_u_shearrate" type="real" default_value="0.01" in_defaults="false"
-					 units="s^{-1}"
-                     description="Vertical shear rate for nudged zonal velocity"
-					 possible_values="Positive real values"/>
-
 				<nml_option name="config_nudge_u_constant" type="real" default_value="10.0" in_defaults="false"
 					 units="m s^{-1}"
-                     description="Constant zonal wind speed for nudged zonal velocity"
+                     description="Target zonal wind speed for nudging"
+					 possible_values="Real values"/>
+
+                <nml_option name="config_nudge_T" type="logical" default_value="false" in_defaults="false"
+                     units="-"
+                     description="Whether to apply nudging on temperature"
+                     possible_values=".true. or .false."/>
+
+                <nml_option name="config_nudge_T_timescale" type="real" default_value="1" in_defaults="false"
+                     units="days"
+                     description="Timescale, in days (86400 s), for nudging of temperature"
+                     possible_values=".true. or .false."/>
+
+                <nml_option name="config_nudge_T_scale_z" type="real" default_value="500.0" in_defaults="false"
+                     units="m"
+                     description="Vertical scale for nudging kernel on temperature"
+                     possible_values="Positive real values"/>
+
+				<nml_option name="config_nudge_T_centre_z" type="real" default_value="17000.0" in_defaults="false"
+                     units="m"
+                     description="Vertical height for centre of nudging kernel on temperature"
+                     possible_values="Positive real values"/>
+
+				<nml_option name="config_nudge_T_scale_lat" type="real" default_value="0.26" in_defaults="false"
+                     units="rad"
+                     description="Latitudinal scale for nudging kernel on temperature"
+					 possible_values="Positive real values"/>
+
+				<nml_option name="config_nudge_T_constant" type="real" default_value="200.0" in_defaults="false"
+					 units="K"
+                     description="Target temperature for nudging"
 					 possible_values="Real values"/>
 		</nml_record>
 
@@ -2035,6 +2055,9 @@
 
                 <var name="tend_theta" name_in_code="theta_m" type="real" dimensions="nVertLevels nCells Time" units="kg K m^{-3} s^{-1}"
                      description="tendency of coupled potential temperature rho*theta_m/zz from dynamics and physics, updated each RK step"/>
+
+				<var name="nudge_tend_theta" name_in_code="theta_nudge" type="real" dimensions="nVertLevels nCells Time" units="kg K m^{-3} s^{-2}"
+                     description="Tendency of coupled potential temperature from nudging"/>
 
                 <var name="rt_diabatic_tend" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
                      description="Tendency of modified potential temperature due to cloud microphysics"/>
