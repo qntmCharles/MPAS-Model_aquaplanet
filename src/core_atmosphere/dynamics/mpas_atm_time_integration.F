@@ -6349,7 +6349,7 @@ module atm_time_integration
           !$acc parallel default(present)
           !$acc loop gang vector
           do iCell = cellSolveStart, cellSolveEnd
-              nudge_cell_coef(iEdge) = exp( -( latCell(iCell) / config_nudge_T_scale_lat )**2.)
+              nudge_cell_coef(iCell) = exp( -( latCell(iCell) / config_nudge_T_scale_lat )**2.)
           end do
           !$acc end parallel
 
