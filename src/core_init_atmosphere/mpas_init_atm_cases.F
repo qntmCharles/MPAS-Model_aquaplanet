@@ -820,6 +820,12 @@ module init_atm_cases
          !Calculate all other variables
          tb(k,:) = theta(k,:)*(1._RKIND+rvord*scalars(index_qv,k,:))
          pb(k,:) = (ppb(k,:)/p0)**(rgas/cp)          !exner_base
+         if (tb(k, :) .eq. 0._RKIND) then
+                 call mpas_log_write('!!!!!!! tb zero !!!!!!!')
+         end if
+         if (zz(k, :) .eq. 0._RKIND) then
+                 call mpas_log_write('!!!!!!! tb zero !!!!!!!')
+         end if
          rb(k,:) = (ppb(k,:)/p0)**(cv/cp)*(1.e5/rgas)/(tb(k,:)*zz(k,:)) !eq 8 of SKamarock et al.
          ! dividing by tb above b/c rb = dry air density
          rtb(k,:) = rb(k,:)*tb(k,:)
