@@ -5274,11 +5274,21 @@ module atm_time_integration
          !$acc enter data copyin(divergence, vorticity)
          !$acc enter data copyin(v)
          !$acc enter data copyin(u_init, v_init)
+
+         !$acc enter data create(tend_u_nudge)
+         !$acc enter data create(u_nudge)
+         !$acc enter data create(tend_theta_nudge)
+         !$acc enter data create(theta_nudge)
       else
          !$acc enter data copyin(tend_w_euler)
          !$acc enter data copyin(tend_u_euler)
          !$acc enter data copyin(tend_theta_euler)
          !$acc enter data copyin(tend_rho)
+
+         !$acc enter data copyin(tend_u_nudge)
+         !$acc enter data copyin(u_nudge)
+         !$acc enter data copyin(tend_theta_nudge)
+         !$acc enter data copyin(theta_nudge)
       end if
       !$acc enter data create(tend_u)
       !$acc enter data copyin(cqu, pp, u, w, pv_edge, rho_edge, ke)
@@ -5288,8 +5298,6 @@ module atm_time_integration
       !$acc enter data create(nudge_vert_coef)
       !$acc enter data create(nudge_edge_coef)
       !$acc enter data create(nudge_cell_coef)
-      !$acc enter data create(tend_u_nudge)
-      !$acc enter data create(u_nudge)
       !$acc enter data copyin(tend_ru_physics)
       !$acc enter data create(tend_w)
       !$acc enter data copyin(rho_zz)
@@ -5300,8 +5308,6 @@ module atm_time_integration
       !$acc enter data copyin(tend_rtheta_physics)
       !$acc enter data copyin(rw_save, rt_diabatic_tend)
       !$acc enter data create(rthdynten)
-      !$acc enter data create(tend_theta_nudge)
-      !$acc enter data create(theta_nudge)
       !$acc enter data copyin(t_init)
 #ifdef CURVATURE
       !$acc enter data copyin(ur_cell, vr_cell)
@@ -6396,6 +6402,11 @@ module atm_time_integration
          !$acc exit data copyout(tend_theta_euler)
          !$acc exit data copyout(tend_rho)
 
+         !$acc exit data copyout(tend_u_nudge)
+         !$acc exit data copyout(u_nudge)
+         !$acc exit data copyout(tend_theta_nudge)
+         !$acc exit data copyout(theta_nudge)
+
          !$acc exit data delete(kdiff)
          !$acc exit data delete(tend_rho_physics)
          !$acc exit data delete(rb, rr_save)
@@ -6407,11 +6418,12 @@ module atm_time_integration
          !$acc exit data delete(tend_u_euler)
          !$acc exit data delete(tend_theta_euler)
          !$acc exit data delete(tend_rho)
+
+         !$acc exit data delete(tend_u_nudge)
+         !$acc exit data delete(u_nudge)
+         !$acc exit data delete(tend_theta_nudge)
+         !$acc exit data delete(theta_nudge)
       end if
-      !$acc exit data copyout(tend_u_nudge)
-      !$acc exit data copyout(u_nudge)
-      !$acc exit data copyout(tend_theta_nudge)
-      !$acc exit data copyout(theta_nudge)
       !$acc exit data copyout(tend_u)
       !$acc exit data delete(cqu, pp, u, w, pv_edge, rho_edge, ke)
       !$acc exit data copyout(h_divergence)
