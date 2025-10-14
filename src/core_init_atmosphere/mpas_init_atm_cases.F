@@ -818,20 +818,22 @@ module init_atm_cases
 
    
          !Calculate all other variables
-         tb(k,:) = theta(k,:)*(1._RKIND+rvord*scalars(index_qv,k,:))
-         pb(k,:) = (ppb(k,:)/p0)**(rgas/cp)          !exner_base
-         rb(k,:) = (ppb(k,:)/p0)**(cv/cp)*(1.e5/rgas)/(tb(k,:)*zz(k,:)) !eq 8 of SKamarock et al.
-         ! dividing by tb above b/c rb = dry air density
-         rtb(k,:) = rb(k,:)*tb(k,:)
-         p  (k,:) = pb(k,:)    
-         pp (k,:) = 0.                                !pressure pert
-         rr (k,:) = 0.                                !rho_pert         
+         do i=1,nCells
+           tb(k,i) = theta(k,i)*(1._RKIND+rvord*scalars(index_qv,k,i))
+           pb(k,i) = (ppb(k,i)/p0)**(rgas/cp)          !exner_base
+           rb(k,i) = (ppb(k,i)/p0)**(cv/cp)*(1.e5/rgas)/(tb(k,i)*zz(k,i)) !eq 8 of SKamarock et al.
+           ! dividing by tb above b/c rb = dry air density
+           rtb(k,i) = rb(k,i)*tb(k,i)
+           p  (k,i) = pb(k,i)    
+           pp (k,i) = 0.                                !pressure pert
+           rr (k,i) = 0.                                !rho_pert         
 
-         t (k,:) = theta(k,:)
-         rt (k,:) = t(k,:)*rr(k,:)+rb(k,:)*(t(k,:)-tb(k,:))
-         rho_zz (k,:) = rb(k,:) + rr(k,:)
-         rho(k,:) = rho_zz(k,:) * zz(k,:)
-         theta(k,:) = t(k,:) / (1.0 + 1.61 * scalars(index_qv,k,:))
+           t (k,i) = theta(k,i)
+           rt (k,i) = t(k,i)*rr(k,i)+rb(k,i)*(t(k,i)-tb(k,i))
+           rho_zz (k,i) = rb(k,i) + rr(k,i)
+           rho(k,i) = rho_zz(k,i) * zz(k,i)
+           theta(k,i) = t(k,i) / (1.0 + 1.61 * scalars(index_qv,k,i))
+         end do
 
       end do
          call mpas_log_write('done interpolating sounding and computing base state')
