@@ -614,17 +614,18 @@ module mpas_isobaric_diagnostics
                 t_iso_levels(16) = 92500.0
                 t_iso_levels(17) = 100000.0
 
-                if (nIsoLevelsT > 17) then
+                if (nIsoLevelsT > 17) then ! This will probably fail if nIsoLevelsT < 17
                     do k = 18, nIsoLevelsT
                         t_iso_levels(k) = 100000.0
                     end do
                 end if
+            else
+
+                do k = 1, nIsoLevelsT
+                    read(iso_unit, *) t_iso_levels(k)
+                end do
 
             end if
-
-            do k = 1, nIsoLevelsT
-                read(iso_unit, *) t_iso_levels(k)
-            end do
 
             close(iso_unit)
             call mpas_release_unit(iso_unit)
