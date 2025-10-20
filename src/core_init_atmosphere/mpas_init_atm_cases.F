@@ -727,6 +727,7 @@ module init_atm_cases
        end do
         do k=1,nz1
           zz (k,iCell) = (zw(k+1)-zw(k))/(zgrid(k+1,iCell)-zgrid(k,iCell))
+          !call mpas_log_write(' k, iCell, zz = $i $i $r', intArgs=(/k,iCell/), realArgs=(/zz(k,iCell)/))
         end do
       end do
 
@@ -818,22 +819,26 @@ module init_atm_cases
 
    
          !Calculate all other variables
-         do i=1,nCells
-           tb(k,i) = theta(k,i)*(1._RKIND+rvord*scalars(index_qv,k,i))
-           pb(k,i) = (ppb(k,i)/p0)**(rgas/cp)          !exner_base
-           rb(k,i) = (ppb(k,i)/p0)**(cv/cp)*(1.e5/rgas)/(tb(k,i)*zz(k,i)) !eq 8 of SKamarock et al.
-           ! dividing by tb above b/c rb = dry air density
-           rtb(k,i) = rb(k,i)*tb(k,i)
-           p  (k,i) = pb(k,i)    
-           pp (k,i) = 0.                                !pressure pert
-           rr (k,i) = 0.                                !rho_pert         
+         do iCell=1,nCells
+             tb(k,iCell) = theta(k,iCell)*(1._RKIND+rvord*scalars(index_qv,k,iCell))
+             pb(k,iCell) = (ppb(k,iCell)/p0)**(rgas/cp)          !exner_base
 
-           t (k,i) = theta(k,i)
-           rt (k,i) = t(k,i)*rr(k,i)+rb(k,i)*(t(k,i)-tb(k,i))
-           rho_zz (k,i) = rb(k,i) + rr(k,i)
-           rho(k,i) = rho_zz(k,i) * zz(k,i)
-           theta(k,i) = t(k,i) / (1.0 + 1.61 * scalars(index_qv,k,i))
-         end do
+             rb(k,iCell) = (ppb(k,iCell)/p0)**(cv/cp)*(p0/rgas)/(tb(k,iCell)*zz(k,iCell)) !eq 8 of SKamarock et al.
+             if (zz(k, iCell) == 0) then
+                 call mpas_log_write('k, iCell, rb, zz = $i $i $r $r', intArgs=(/k,iCell/), realArgs=(/rb(k,iCell), zz(k,iCell)/))
+             end if
+             ! dividing by tb above b/c rb = dry air density
+             rtb(k,iCell) = rb(k,iCell)*tb(k,iCell)
+             p  (k,iCell) = pb(k,iCell)    
+             pp (k,iCell) = 0.                                !pressure pert
+             rr (k,iCell) = 0.                                !rho_pert         
+
+             t (k,iCell) = theta(k,iCell)
+             rt (k,iCell) = t(k,iCell)*rr(k,iCell)+rb(k,iCell)*(t(k,iCell)-tb(k,iCell))
+             rho_zz (k,iCell) = rb(k,iCell) + rr(k,iCell)
+             rho(k,iCell) = rho_zz(k,iCell) * zz(k,iCell)
+             theta(k,iCell) = t(k,iCell) / (1.0 + 1.61 * scalars(index_qv,k,iCell))
+          end do
 
       end do
          call mpas_log_write('done interpolating sounding and computing base state')

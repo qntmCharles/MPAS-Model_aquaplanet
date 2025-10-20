@@ -509,6 +509,8 @@ module atm_core
       call mpas_pool_get_dimension(block % dimensions, 'edgeSolveThreadStart', edgeSolveThreadStart)
       call mpas_pool_get_dimension(block % dimensions, 'edgeSolveThreadEnd', edgeSolveThreadEnd)
 
+      call mpas_log_write('About to initialise diagnostics')
+
 !$OMP PARALLEL DO
       do thread=1,nThreads
          if (.not. config_do_restart .or. (config_do_restart .and. config_do_DAcycling)) then
@@ -521,12 +523,16 @@ module atm_core
                                               edgeSolveThreadStart(thread), edgeSolveThreadEnd(thread))
          end if
 
+         call mpas_log_write('Initialisation of coupled diagnostics done.')
+
          call atm_compute_solve_diagnostics(dt, state, 1, diag, mesh, block % configs, &
                                             cellThreadStart(thread), cellThreadEnd(thread), &
                                             vertexThreadStart(thread), vertexThreadEnd(thread), &
                                             edgeThreadStart(thread), edgeThreadEnd(thread))
       end do
 !$OMP END PARALLEL DO
+
+      call mpas_log_write('Done initialising diagnostics')
 
       deallocate(ke_vertex)
       deallocate(ke_edge)
@@ -1511,4 +1517,3 @@ module atm_core
    end subroutine mpas_atm_run_compatibility
 
 end module atm_core
-
