@@ -325,34 +325,39 @@
                      description="Target zonal wind speed for nudging"
 					 possible_values="Real values"/>
 
-                <nml_option name="config_nudge_T" type="logical" default_value="false" in_defaults="false"
+                <nml_option name="config_nudge_theta" type="logical" default_value="false" in_defaults="false"
                      units="-"
-                     description="Whether to apply nudging on temperature"
+                     description="Whether to apply nudging on potential temperature"
                      possible_values=".true. or .false."/>
 
-                <nml_option name="config_nudge_T_timescale" type="real" default_value="1" in_defaults="false"
+                <nml_option name="config_nudge_theta_timescale" type="real" default_value="1" in_defaults="false"
                      units="days"
-                     description="Timescale, in days (86400 s), for nudging of temperature"
+                     description="Timescale, in days (86400 s), for nudging of potential temperature"
                      possible_values=".true. or .false."/>
 
-                <nml_option name="config_nudge_T_scale_z" type="real" default_value="500.0" in_defaults="false"
+                <nml_option name="config_nudge_theta_scale_z" type="real" default_value="500.0" in_defaults="false"
                      units="m"
-                     description="Vertical scale for nudging kernel on temperature"
+                     description="Vertical scale for nudging kernel on potential temperature"
                      possible_values="Positive real values"/>
 
-				<nml_option name="config_nudge_T_centre_z" type="real" default_value="17000.0" in_defaults="false"
+				<nml_option name="config_nudge_theta_centre_z" type="real" default_value="17000.0" in_defaults="false"
                      units="m"
-                     description="Vertical height for centre of nudging kernel on temperature"
+                     description="Vertical height for centre of nudging kernel on potential temperature and height corresponding to config_nudge_theta_constant"
                      possible_values="Positive real values"/>
 
-				<nml_option name="config_nudge_T_scale_lat" type="real" default_value="0.26" in_defaults="false"
+				<nml_option name="config_nudge_theta_scale_lat" type="real" default_value="0.26" in_defaults="false"
                      units="rad"
-                     description="Latitudinal scale for nudging kernel on temperature"
+                     description="Latitudinal scale for nudging kernel on potential temperature"
 					 possible_values="Positive real values"/>
 
-				<nml_option name="config_nudge_T_constant" type="real" default_value="200.0" in_defaults="false"
+				<nml_option name="config_nudge_theta_constant" type="real" default_value="400.0" in_defaults="false"
 					 units="K"
-                     description="Target temperature for nudging"
+                     description="Constant for linear potential temperature target for nudging"
+					 possible_values="Real values"/>
+
+				<nml_option name="config_nudge_theta_gradient" type="real" default_value="0.0" in_defaults="false"
+					 units="K"
+                     description="Gradient for linear potential temperature target for nudging"
 					 possible_values="Real values"/>
 		</nml_record>
 
