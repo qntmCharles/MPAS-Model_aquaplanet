@@ -596,26 +596,31 @@ module mpas_isobaric_diagnostics
             call mpas_new_unit(iso_unit)
             open(iso_unit, file='iso_levels.dat', action='READ', status='OLD', iostat=istat)
             if(istat /= open_ok) then ! no file found, default to manually setting levels
-                t_iso_levels(1) = 1000.0
-                t_iso_levels(2) = 2000.0
-                t_iso_levels(3) = 3000.0
-                t_iso_levels(4) = 5000.0
-                t_iso_levels(5) = 7000.0
-                t_iso_levels(6) = 10000.0
-                t_iso_levels(7) = 15000.0
-                t_iso_levels(8) = 20000.0
-                t_iso_levels(9) = 25000.0
-                t_iso_levels(10) = 30000.0
+                t_iso_levels(1) = 5000.0
+                t_iso_levels(2) = 7000.0
+                t_iso_levels(3) = 10000.0
+                t_iso_levels(4) = 15000.0
+                t_iso_levels(5) = 17000.0
+                t_iso_levels(6) = 20000.0
+                t_iso_levels(7) = 25000.0
+                t_iso_levels(8) = 27000.0
+                t_iso_levels(9) = 30000.0
+                t_iso_levels(10) = 35000.0
                 t_iso_levels(11) = 40000.0
-                t_iso_levels(12) = 50000.0
-                t_iso_levels(13) = 60000.0
-                t_iso_levels(14) = 70000.0
-                t_iso_levels(15) = 85000.0
-                t_iso_levels(16) = 92500.0
-                t_iso_levels(17) = 100000.0
+                t_iso_levels(12) = 45000.0
+                t_iso_levels(13) = 50000.0
+                t_iso_levels(14) = 55000.0
+                t_iso_levels(15) = 60000.0
+                t_iso_levels(16) = 65000.0
+                t_iso_levels(17) = 70000.0
+                t_iso_levels(18) = 75000.0
+                t_iso_levels(19) = 80000.0
+                t_iso_levels(20) = 85000.0
+                t_iso_levels(21) = 92500.0
+                t_iso_levels(22) = 100000.0
 
-                if (nIsoLevelsT > 17) then ! This will probably fail if nIsoLevelsT < 17
-                    do k = 18, nIsoLevelsT
+                if (nIsoLevelsT > 22) then ! This will probably fail if nIsoLevelsT < 17
+                    do k = 23, nIsoLevelsT
                         t_iso_levels(k) = 100000.0
                     end do
                 end if
