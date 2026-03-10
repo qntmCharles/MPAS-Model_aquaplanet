@@ -1899,7 +1899,7 @@
 
                 <!-- Other diagnostic variables -->
                 <var name="theta_nudge" type="real" dimensions="nVertLevels nCells Time" units="K"
-                     description="Nudged temperature at cell centers"/>
+                     description="Nudged potential temperature at cell centers"/>
 
                 <var name="u_nudge" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-1}"
                      description="Horizontal normal nudged velocity at edges"/>
