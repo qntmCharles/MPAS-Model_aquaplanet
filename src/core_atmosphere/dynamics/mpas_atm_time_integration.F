@@ -5785,7 +5785,7 @@ module atm_time_integration
           !$acc parallel default(present)
           !$acc loop gang vector
           do k = 1, nVertLevels
-              nudge_vert_coef(k) = exp( -( (zgrid(k, 1) - config_nudge_u_centre_z) &
+              nudge_vert_coef(k) = exp( -( (0.5*(zgrid(k, 1)+zgrid(k+1,1)) - config_nudge_u_centre_z) &
                                                 / config_nudge_u_scale_z )**2.)
                             ! exploiting the fact that surface is uniform, so zgrid is uniform.
                             ! if terrain is introduced, this needs changing
@@ -6348,10 +6348,11 @@ module atm_time_integration
           !$acc parallel default(present)
           !$acc loop gang vector
           do k = 1, nVertLevels
-              nudge_vert_coef(k) = exp( -( (zgrid(k, 1) - config_nudge_theta_centre_z) &
+              nudge_vert_coef(k) = exp( -( (0.5*(zgrid(k, 1)+zgrid(k+1, 1)) - config_nudge_theta_centre_z) &
                                                 / config_nudge_theta_scale_z )**2.)
-              nudge_theta_target(k) = config_nudge_theta_constant  + &
-                        config_nudge_theta_gradient * (zgrid(k, 1) - config_nudge_theta_centre_z)
+              nudge_theta_target(k) = config_nudge_theta_constant &
+                        + config_nudge_theta_gradient * (0.5*(zgrid(k, 1)+zgrid(k+1,1)) - config_nudge_theta_centre_z)
+                            
                             ! exploiting the fact that surface is uniform, so zgrid is uniform.
                             ! if terrain is introduced, this needs changing
           end do
@@ -6370,11 +6371,10 @@ module atm_time_integration
 !DIR$ IVDEP
              !$acc loop vector
              do k = 1, nVertLevels
-                theta_nudge(k, iCell) = ( theta_m(k, iCell) + ( nudge_vert_coef(k) * nudge_cell_coef(iCell) & 
-                    * ( nudge_theta_target(k) - theta_m(k, iCell) ) ) ) &
-                    / ( config_nudge_theta_timescale * seconds_per_day )
+                theta_nudge(k, iCell) = theta_m(k, iCell) + ( nudge_vert_coef(k) * nudge_cell_coef(iCell) & 
+                    * ( (nudge_theta_target(k) * (1._RKIND + rvord * scalars(index_qv, k, iCell)))- theta_m(k, iCell) ) )
                 tend_theta_nudge(k, iCell) = ( rho_zz(k, iCell) * nudge_vert_coef(k) * nudge_cell_coef(iCell) &
-                    * ( nudge_theta_target(k) - theta_m(k, iCell) ) ) &
+                    * ( ( nudge_theta_target(k) * (1._RKIND + rvord * scalars(index_qv, k, iCell))) - theta_m(k, iCell) ) ) &
                     / ( config_nudge_theta_timescale * seconds_per_day )
              end do
           end do
