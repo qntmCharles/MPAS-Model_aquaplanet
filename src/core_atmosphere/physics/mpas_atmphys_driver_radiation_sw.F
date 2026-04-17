@@ -376,6 +376,7 @@
  logical,pointer:: config_o3climatology
  logical,pointer:: config_equinox
  logical,pointer:: config_microp_re
+ logical,pointer:: config_crf_on
  character(len=StrKIND),pointer:: radt_sw_scheme
  character(len=StrKIND),pointer:: microp_scheme
 
@@ -397,6 +398,7 @@
  call mpas_pool_get_config(configs,'config_equinox'       ,config_equinox      )
  call mpas_pool_get_config(configs,'config_radt_sw_scheme',radt_sw_scheme      )
  call mpas_pool_get_config(configs,'config_microp_scheme' ,microp_scheme       )
+ call mpas_pool_get_config(configs,'config_radt_cldfrac'  ,config_crf_on       )
 
  call mpas_pool_get_array(mesh,'latCell',latCell)
  call mpas_pool_get_array(mesh,'lonCell',lonCell)
@@ -433,7 +435,11 @@
  do j = jts,jte
  do k = kts,kte
  do i = its,ite
-    cldfrac_p(i,k,j) = cldfrac(k,i)
+    if (config_crf_on) then
+        cldfrac_p(i,k,j) = cldfrac(k,i)
+    else
+        cldfrac_p(i,k,j) = 0.0_RKIND
+    end if
  enddo
  enddo
  enddo
